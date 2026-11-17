@@ -8,7 +8,7 @@ class Patient:
         self.__Condition_name = Condition_name
         self.__Age = Age
         self.__Policy_number = Policy_Number
-        self.__ Ins_company
+        self.__Ins_company
 
     def get_patient_id(self):
         return self.__Patient_ID

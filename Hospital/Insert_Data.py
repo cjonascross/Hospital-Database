@@ -11,9 +11,18 @@ mydb = mysql.connector.connect(
 
 mycursor = mydb.cursor()
 
-# --------------------------------
-# 1. DOCTOR DATA
-# --------------------------------
+mycursor.execute("SET FOREIGN_KEY_CHECKS = 0")
+
+for table in [
+    "Inventory", "Bill", "Policy", "Patient", "Medicine",
+    "Plans", "Conditions", "Room", "Doctor"
+]:
+    mycursor.execute(f"TRUNCATE TABLE {table}")
+
+mycursor.execute("SET FOREIGN_KEY_CHECKS = 1")
+
+print("Cleared all existing data.")
+
 
 doctors = [
     (1, "Dr. Smith", "Emergency", 100000),
@@ -27,7 +36,7 @@ doctors = [
     (9, "Dr. Taylor", "Pulmonology", 138000),
     (10, "Dr. Anderson", "Gastroenterology", 142000),
     (11, "Dr. Thomas", "Emergency", 110000),
-    (12, "Dr. Jackson", "Cardiology", 155000)
+    (12, "Dr. Jackson", "Cardiology", 155000),
 ]
 
 mycursor.executemany("""
@@ -37,9 +46,6 @@ VALUES (%s, %s, %s, %s)
 """, doctors)
 
 
-# --------------------------------
-# 2. ROOM DATA
-# --------------------------------
 
 rooms = [
     ("ER-101", "Emergency"),
@@ -49,9 +55,19 @@ rooms = [
     ("NEU-301", "Neurology"),
     ("PED-401", "Pediatrics"),
     ("ORT-501", "Orthopedics"),
+    ("ORT-502", "Orthopedics"),
+    ("ORT-503", "Orthopedics"),
+    ("ORT-504", "Orthopedics"),
+    ("ORT-505", "Orthopedics"),
     ("DER-601", "Dermatology"),
+    ("DER-602", "Dermatology"),
+    ("DER-603", "Dermatology"),
     ("ONC-701", "Oncology"),
+    ("ONC-702", "Oncology"),
+    ("ONC-703", "Oncology"),
     ("GEN-801", "General Medicine"),
+    ("GEN-802", "General Medicine"),
+    ("GEN-803", "General Medicine"),
     ("PUL-901", "Pulmonology"),
     ("GAS-1001", "Gastroenterology")
 ]
@@ -63,9 +79,6 @@ VALUES (%s, %s)
 """, rooms)
 
 
-# --------------------------------
-# 3. CONDITION DATA
-# --------------------------------
 
 conditions = [
     ("Flu", "Runny nose and fever", "General Medicine"),
@@ -89,9 +102,6 @@ VALUES (%s, %s, %s)
 """, conditions)
 
 
-# --------------------------------
-# 4. PLANS DATA
-# --------------------------------
 
 plans = [
     ("BCBS", "Full Coverage", True, 400),
@@ -115,9 +125,6 @@ VALUES (%s, %s, %s, %s)
 """, plans)
 
 
-# --------------------------------
-# 5. MEDICINE DATA
-# --------------------------------
 
 medicines = [
     ("Tamiflu", "Flu symptoms", "Flu"),
@@ -141,25 +148,20 @@ VALUES (%s, %s, %s)
 """, medicines)
 
 
-# --------------------------------
-# 6. PATIENT DATA
-# --------------------------------
-# Policy_Num starts as NULL because
-# policies are created after patients.
 
 patients = [
     (1, "Steve Smith", 30, "GEN-801", 8, "Flu", None, None),
     (2, "Sarah Miller", 45, "CAR-201", 2, "Hypertension", None, None),
-    (3, "James Wilson", 52, "GEN-801", 8, "Diabetes", None, None),
+    (3, "James Wilson", 52, "GEN-802", 8, "Diabetes", None, None),
     (4, "Emily Davis", 12, "PED-401", 4, "Asthma", None, None),
     (5, "Michael Brown", 38, "NEU-301", 3, "Migraine", None, None),
     (6, "Jessica Taylor", 67, "PUL-901", 9, "Pneumonia", None, None),
     (7, "David Anderson", 29, "ORT-501", 5, "Fracture", None, None),
     (8, "Ashley Thomas", 24, "DER-601", 6, "Allergies", None, None),
-    (9, "Robert Jackson", 58, "GEN-801", 8, "Anemia", None, None),
+    (9, "Robert Jackson", 58, "GEN-803", 8, "Anemia", None, None),
     (10, "Olivia White", 33, "GAS-1001", 10, "Gastroenteritis", None, None),
     (11, "Daniel Harris", 61, "CAR-202", 12, "Heart Disease", None, None),
-    (12, "Sophia Martin", 41, "DER-601", 6, "Skin Infection", None, None)
+    (12, "Sophia Martin", 41, "DER-602", 6, "Skin Infection", None, None)
 ]
 
 mycursor.executemany("""
@@ -170,9 +172,6 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 """, patients)
 
 
-# --------------------------------
-# 7. POLICY DATA
-# --------------------------------
 
 policies = [
     (1001, "BCBS", "Full Coverage", True, 1, 400),
@@ -197,8 +196,6 @@ VALUES (%s, %s, %s, %s, %s, %s)
 """, policies)
 
 
-# Update each patient with their policy number
-# and insurance company.
 
 for policy in policies:
     mycursor.execute("""
@@ -207,10 +204,6 @@ for policy in policies:
     WHERE Patient_ID = %s
     """, (policy[0], policy[1], policy[4]))
 
-
-# --------------------------------
-# 8. BILL DATA
-# --------------------------------
 
 bills = [
     (1, 1, 500, 100),
@@ -234,9 +227,6 @@ VALUES (%s, %s, %s, %s)
 """, bills)
 
 
-# --------------------------------
-# 9. INVENTORY DATA
-# --------------------------------
 
 inventory = [
     (1, "Flu Shot Supplies", "GEN-801", "Tamiflu", 100),
@@ -261,15 +251,11 @@ VALUES (%s, %s, %s, %s, %s)
 """, inventory)
 
 
-# --------------------------------
-# SAVE AND CLOSE
-# --------------------------------
 
 mydb.commit()
 
 print("Successfully inserted hospital sample data!")
 
-# Show number of records in every table
 tables = [
     "Doctor", "Patient", "Room", "Conditions",
     "Medicine", "Bill", "Inventory", "Policy", "Plans"
