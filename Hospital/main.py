@@ -12,7 +12,6 @@ HERE = Path(__file__).resolve().parent
 
 
 def tables_exist():
-    """Return True if hospital_db already has all of its tables."""
     config = {k: v for k, v in gui.DB_CONFIG.items() if k != "database"}
     conn = mysql.connector.connect(**config)
     try:
@@ -29,7 +28,6 @@ def tables_exist():
 
 
 def run_script(name):
-    """Run one of the setup scripts with the same Python interpreter."""
     print(f"Running {name}...")
     result = subprocess.run([sys.executable, str(HERE / name)], cwd=HERE)
     if result.returncode != 0:
@@ -37,6 +35,9 @@ def run_script(name):
 
 
 def main():
+    if not gui.login():
+        sys.exit("Login cancelled or failed.")
+
     try:
         if tables_exist():
             print("Tables already exist, skipping Create_Tables.py.")
@@ -50,7 +51,7 @@ def main():
     run_script("Insert_Data.py")
 
     print("Starting GUI...")
-    gui.main()
+    gui.main(require_login=False)   # already logged in above
 
 
 if __name__ == "__main__":

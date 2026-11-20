@@ -1,4 +1,5 @@
 
+import hmac
 import sys
 from decimal import ROUND_HALF_UP, Decimal
 
@@ -8,6 +9,8 @@ from PyQt6.QtWidgets import (
     QAbstractItemView,
     QApplication,
     QComboBox,
+    QDialog,
+    QDialogButtonBox,
     QDoubleSpinBox,
     QFormLayout,
     QGroupBox,
@@ -32,6 +35,11 @@ DB_CONFIG = {
     "password": "coursework",
     "database": "hospital_db",
 }
+
+# Login required when the program starts
+LOGIN_USERNAME = "Hospital"
+LOGIN_PASSWORD = "password"
+MAX_LOGIN_ATTEMPTS = 3
 
 
 PEDIATRIC_AGE_LIMIT = 18   
@@ -924,8 +932,63 @@ class MainWindow(QMainWindow):
         super().closeEvent(event)
 
 
-def main():
-    app = QApplication(sys.argv)
+# ----------------------------------------------------------------------
+# Login
+# ----------------------------------------------------------------------
+class LoginDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Hospital Database - Login")
+        self.attempts_left = MAX_LOGIN_ATTEMPTS
+
+        self.username_edit = QLineEdit()
+        self.password_edit = QLineEdit()
+        self.password_edit.setEchoMode(QLineEdit.EchoMode.Password)
+        self.error_label = QLabel("")
+        self.error_label.setStyleSheet("color: red;")
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok
+                                   | QDialogButtonBox.StandardButton.Cancel)
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Log In")
+        buttons.accepted.connect(self.try_login)
+        buttons.rejected.connect(self.reject)
+
+        form = QFormLayout(self)
+        form.addRow(QLabel("Please log in to continue."))
+        form.addRow("Username:", self.username_edit)
+        form.addRow("Password:", self.password_edit)
+        form.addRow(self.error_label)
+        form.addRow(buttons)
+        self.setMinimumWidth(320)
+
+    def try_login(self):
+        # compare_digest takes the same time whether or not the text matches
+        user_ok = hmac.compare_digest(self.username_edit.text(), LOGIN_USERNAME)
+        pass_ok = hmac.compare_digest(self.password_edit.text(), LOGIN_PASSWORD)
+        if user_ok and pass_ok:
+            self.accept()
+            return
+        self.attempts_left -= 1
+        if self.attempts_left <= 0:
+            QMessageBox.critical(self, "Login Failed", "Too many failed attempts. Exiting.")
+            self.reject()
+            return
+        self.error_label.setText(f"Incorrect username or password. "
+                                 f"{self.attempts_left} attempt(s) left.")
+        self.password_edit.clear()
+        self.password_edit.setFocus()
+
+
+def login():
+    """Show the login dialog. Returns True if the user logged in."""
+    app = QApplication.instance() or QApplication(sys.argv)
+    return LoginDialog().exec() == QDialog.DialogCode.Accepted
+
+
+def main(require_login=True):
+    app = QApplication.instance() or QApplication(sys.argv)
+    if require_login and not login():
+        sys.exit(0)
     try:
         db = HospitalDB(DB_CONFIG)
     except MySQLError as exc:
